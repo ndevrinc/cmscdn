@@ -1,0 +1,278 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Finds a predetermined set of JavaScript references and points them to a shared CDN domain
+ * When JavaScript Aggregation is enabled this module will still function by not allowing
+ * those files to be aggregated, and listing them out separately.
+ */
+
+// Single JavaScript CDN Domain
+define('CMSCDN_DEFAULT_DOMAIN_JS', 'http://j.cmscdn.net/drupal/');
+define('CMSCDN_DOMAIN_JS', variable_get('cmscdn_domain_js', CMSCDN_DEFAULT_DOMAIN_JS));
+
+// Single CSS CDN Domain
+define('CMSCDN_DEFAULT_DOMAIN_CSS', 'http://c.cmscdn.net/drupal/');
+define('CMSCDN_DOMAIN_CSS', variable_get('cmscdn_domain_css', CMSCDN_DEFAULT_DOMAIN_CSS));
+
+// If aggregation is turned on files need to be flagged to not aggregate
+define('CMSCDN_JS_AGGREGATION', variable_get('preprocess_js', FALSE));
+define('CMSCDN_CSS_AGGREGATION', variable_get('preprocess_css', FALSE));
+
+define('CMSCDN_STATUS', variable_get('cmscdn_status', 'active'));
+
+/**
+ * Implements hook_menu().
+ */
+function cmscdn_menu() {
+  $items['admin/settings/cmscdn'] = array(
+    'title' => 'CMS CDN Settings',
+    'description' => 'Configure settings for CMS CDN module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cmscdn_settings'),
+    'file' => 'cmscdn.admin.inc',
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_preprocess_block().
+ * Last available hook before preprocess_page to allow all JS/CSS files to be
+ * identified before they get aggregated.
+ * Only needs to modify files if aggregation is enabled
+ */
+function cmscdn_preprocess_block(&$variables) {
+  // The first time this is called all the Core JS and CSS files are available
+  static $first = TRUE;
+  if ($first && 'active' == CMSCDN_STATUS) {
+    if (CMSCDN_JS_AGGREGATION || variable_get('cmscdn_aggregate_js', TRUE)) {
+      $variables['scripts'] = drupal_add_js();
+      cmscdn_core_js_files($variables);
+      cmscdn_swfupload_files($variables);
+      cmscdn_jquery_ui_files($variables);
+    }
+    if (CMSCDN_CSS_AGGREGATION || variable_get('cmscdn_aggregate_css', TRUE)) {
+      $variables['css'] = drupal_add_css();
+      cmscdn_core_css_files($variables);
+    }
+    $first = FALSE;
+  }
+}
+
+/**
+ * Replace all the known JavaScript library references with the CDN equivalent
+ *
+ */
+function cmscdn_preprocess_page(&$variables, $hook) {
+
+  if ('active' == CMSCDN_STATUS) {
+    if (CMSCDN_JS_AGGREGATION || variable_get('cmscdn_aggregate_js', TRUE)) {
+      $variables['scripts'] = cmscdn_aggregated_js($variables);
+      // All Core required JavaScript files
+      $variables['scripts'] = str_replace('/core.required.min.js', CMSCDN_DOMAIN_JS . VERSION . '/core.required.min.js', $variables['scripts']);
+    }
+
+    if (CMSCDN_CSS_AGGREGATION || variable_get('cmscdn_aggregate_css', TRUE)) {
+      $variables['styles'] = cmscdn_aggregated_css($variables);
+    }
+
+    // Replace each of the /misc/*.js references with the external CDN
+    $pattern = '/(src=")(\/misc\/)(.*)(js)(\?)(.*)(\")/i';
+    $replacement = '$1' . CMSCDN_DOMAIN_JS . VERSION . '$2$3$4$7';
+    $variables['scripts'] = preg_replace($pattern, $replacement, $variables['scripts']);
+
+    // Replace each of the /modules/*.js references with the external CDN
+    $pattern = '/(src=")(\/modules\/)(.*)(js)(\?)(.*)(\")/i';
+    $replacement = '$1' . CMSCDN_DOMAIN_JS . VERSION . '$2$3$4$7';
+    $variables['scripts'] = preg_replace($pattern, $replacement, $variables['scripts']);
+
+    // Replace each of the /misc/*.css references with the external CDN
+    $pattern = '/(href=")(\/misc\/)(.*)(css)(\?)(.*)(\")/i';
+    $replacement = '$1' . CMSCDN_DOMAIN_CSS . VERSION . '$2$3$4$7';
+    $variables['styles'] = preg_replace($pattern, $replacement, $variables['styles']);
+
+    // Replace each of the /modules/*.css references with the external CDN
+    $pattern = '/(href=")(\/modules\/)(.*)(css)(\?)(.*)(\")/i';
+    $replacement = '$1' . CMSCDN_DOMAIN_CSS . VERSION . '$2$3$4$7';
+    $variables['styles'] = preg_replace($pattern, $replacement, $variables['styles']);
+
+    // Replace swfupload references with the external CDN
+    $pattern = '/(src=")(.*)(\/swfupload\/)(.*)(js)(\?)(.*)(\")/i';
+    $swfupload_dir = 'swfupload/2.2.0.1';
+    $replacement = '$1' . CMSCDN_DOMAIN_JS . $swfupload_dir . '/$4$5$8';
+    $variables['scripts'] = preg_replace($pattern, $replacement, $variables['scripts']);
+
+    // Replace jquery.ui references with the external CDN
+    $pattern = '/(src=")(.*)(\/jquery\.ui\/ui\/)(.*)(js)(\?)(.*)(\")/i';
+    $dir = 'jquery.ui/' . jquery_ui_get_version();
+    $replacement = '$1' . CMSCDN_DOMAIN_JS . $dir . '/$4$5$8';
+    $variables['scripts'] = preg_replace($pattern, $replacement, $variables['scripts']);
+
+    // JQuery is already a globally accesible library
+    $variables['scripts'] = str_replace(CMSCDN_DOMAIN_JS . VERSION . '/misc/jquery.js', 'http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js', $variables['scripts']);
+  }
+}
+
+/**
+ * Finds and updates drupal core JavaScript files to be externally cached
+ */
+function cmscdn_core_js_files($variables) {
+  $types = array('core', 'module');
+  foreach ($types as $type) {
+    foreach ($variables['scripts'][$type] as $file => $values) {
+      if (cmscdn_core_file($file)) {
+        drupal_add_js($file, $type, 'header', $values['defer'], TRUE, FALSE);
+      }
+    }
+  }
+}
+
+/**
+ * Finds and updates drupal core css files to be externally cached
+ */
+function cmscdn_core_css_files($variables) {
+  $types = array('core', 'module');
+  foreach ($types as $type) {
+    if (is_array($variables['css']['all'][$type])) {
+      foreach ($variables['css']['all'][$type] as $file => $values) {
+        if (cmscdn_core_file($file)) {
+          drupal_add_css($file, $type, 'all', FALSE);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Finds and updates swfupload files to be externally cached
+ * Known modules that use swfupload need to be added here
+ */
+function cmscdn_swfupload_files($variables) {
+  foreach ($variables['scripts']['module'] as $file => $values) {
+    if (cmscdn_other_shared_file($file)) {
+      drupal_add_js($file, 'module', 'header', $values['defer'], TRUE, FALSE);
+    }
+  }
+}
+
+/**
+ * Finds and updates jquery.ui files to be externally cached
+ * Known modules that use jquery.ui need to be added here
+ */
+function cmscdn_jquery_ui_files($variables) {
+  foreach ($variables['scripts']['module'] as $file => $values) {
+    if (cmscdn_other_shared_file($file)) {
+      drupal_add_js($file, 'module', 'header', $values['defer'], TRUE, FALSE);
+    }
+  }
+}
+
+/**
+ * Drupal Core places non aggregated files after the aggregated file
+ * Reorders the non-aggregated CSS files
+ */
+function cmscdn_aggregated_css($variables) {
+  // Remove each of the /misc/*.css references
+  $pattern = '/(<link)(.*)(href=")(\/misc\/)(.*)(css)(\?)(.*)(\" \/>)/i';
+  $replacement = '';
+  $variables['styles'] = preg_replace($pattern, $replacement, $variables['styles']);
+
+  // Remove each of the /modules/*.css references
+  $pattern = '/(<link)(.*)(href=")(\/modules\/)(.*)(css)(\?)(.*)(\" \/>)/i';
+  $replacement = '';
+  $variables['styles'] = preg_replace($pattern, $replacement, $variables['styles']);
+
+  // Add CDN aggregated core css files
+  $core_css = "\n" . '<link type="text/css" rel="stylesheet" media="all" href="' . CMSCDN_DOMAIN_CSS . VERSION . '/core.min.css" />' . "\n";
+  $variables['styles'] =  $core_css . $variables['styles'];
+
+  return $variables['styles'];
+}
+/**
+ * Drupal Core places non aggregated files after the aggregated file
+ * Reorders the non-aggregated JavaScript files
+ */
+function cmscdn_aggregated_js($variables) {
+  // Values for non aggregated files
+  $js_values = array(
+    'cache' => 1,
+    'defer' => '',
+    'preprocess' => FALSE
+  );
+  // All the loaded JavaScript
+  $all_scripts = drupal_add_js();
+
+  $types = array('core', 'module');
+  foreach ($types as $type) {
+    $temp = array();
+    foreach ($all_scripts[$type] as $file => $values) {
+      if ('' == $values['preprocess'] && cmscdn_all_file($file)) {
+        $temp[$type] = array($file => $js_values);
+        $misc = drupal_get_js('header', $temp);
+        if ('misc/' != drupal_substr($file, 0, 5)) {
+          $new_scripts .= $misc;
+        }
+        $variables['scripts'] = str_replace($misc, '', $variables['scripts']);
+      }
+    }
+  }
+  $misc = drupal_get_js('header', array('core' => array('core.required.min.js' => $js_values)));
+
+  $variables['scripts'] = $misc . $new_scripts . $variables['scripts'];
+
+  return $variables['scripts'];
+}
+
+/**
+ * Only core files under /misc and /modules
+ */
+function cmscdn_core_file($file) {
+  $pos = strpos($file, '-rtl.css');
+
+  if ('misc/' == drupal_substr($file, 0, 5) && $pos === FALSE) {
+    return TRUE;
+  }
+  elseif ('modules/' == drupal_substr($file, 0, 8) && $pos === FALSE) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Other shared libraries like swfupload, jquery ui
+ */
+function cmscdn_other_shared_file($file) {
+  $return = FALSE;
+  if (module_exists('image_fupload')) {
+    $swfupload_dir = drupal_get_path('module', 'image_fupload') . '/swfupload';
+    $length = drupal_strlen($swfupload_dir);
+    if ($swfupload_dir == drupal_substr($file, 0, $length)) {
+      $return = TRUE;
+    }
+  }
+
+  if (module_exists('jquery_ui')) {
+    $length = drupal_strlen(JQUERY_UI_PATH);
+    if (JQUERY_UI_PATH == drupal_substr($file, 0, $length)) {
+      $return = TRUE;
+    }
+  }
+
+  return $return;
+}
+/**
+ * Only core files under /misc and /modules
+ * Adding other shared libraries like swfupload
+ */
+function cmscdn_all_file($file) {
+  if (cmscdn_core_file($file) || cmscdn_other_shared_file($file)) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+

@@ -1,0 +1,22 @@
+<?php
+// $Id$
+/**
+ *  @file
+ *  No database changes are necessary at this time
+ */
+
+/**
+ * Implements hook_disable().
+ */
+function cmscdn_disable() {
+  drupal_set_message(t('The CMS CDN Module has been disabled, make sure your site cache has been cleared.'));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function cmscdn_uninstall() {
+  variable_del('cmscdn_domain_js');
+  variable_del('cmscdn_domain_css');
+  variable_del('cmscdn_status');
+}
