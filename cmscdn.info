@@ -1,4 +1,3 @@
-; $Id$
 name = CMS CDN For Drupal
 description = "Instant remote caching of core js files."
 dependencies[] = comment
