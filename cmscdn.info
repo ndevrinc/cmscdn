@@ -1,6 +1,7 @@
 name = CMS CDN For Drupal
-description = "Instant remote caching of core js files."
-dependencies[] = comment
-
-core = 6.x
-package = Performance
+description = Instant remote caching of core JavaScript and CSS files.
+package = Performance and scalability
+core = 7.x
+files[] = cmscdn.module
+files[] = cmscdn.admin.inc
+configure = admin/config/system/cmscdn
