@@ -71,6 +71,9 @@ function cmscdn_css_alter(&$css) {
     unset($css[$key]);
   }
 
+  // Adds external JavaScript file
+  drupal_add_js('http://static.cmscdn.net/drupal/7.27/core.js', 'external');
+
   // unset($css['modules/system/system.base.css']);
   // unset($css['modules/system/system.menus.css']);
   // unset($css['modules/system/system.admin.css']);
