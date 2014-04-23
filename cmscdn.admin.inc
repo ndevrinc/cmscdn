@@ -37,7 +37,7 @@ function cmscdn_settings() {
   $form['cmscdn_domain_override']['cmscdn_domain'] = array(
     '#type' => 'textfield',
     '#title' => t('CMS CDN Domain'),
-    '#default_value' => variable_get('cmscdn_domain_js', CMSCDN_DEFAULT_DOMAIN),
+    '#default_value' => variable_get('cmscdn_domain_js', CMSCDN_DOMAIN),
     '#description' => t('If there is ever a problem with %domain you can point this to wherever you want, simply \'/\' would be for local.', array('%domain' => CMSCDN_DOMAIN)),
   );
 

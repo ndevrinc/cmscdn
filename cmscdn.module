@@ -15,8 +15,8 @@ define('CMSCDN_DEFAULT_DOMAIN', 'http://static.cmscdn.net/drupal/');
 define('CMSCDN_DOMAIN', variable_get('cmscdn_domain', CMSCDN_DEFAULT_DOMAIN));
 
 // If aggregation is turned on files need to be flagged to not aggregate
-define('CMSCDN_JS_AGGREGATION', variable_get('preprocess_js', FALSE));
-define('CMSCDN_CSS_AGGREGATION', variable_get('preprocess_css', FALSE));
+define('CMSCDN_JS_AGGREGATION', variable_get('cmscdn_aggregate_js', FALSE));
+define('CMSCDN_CSS_AGGREGATION', variable_get('cmscdn_aggregate_css', FALSE));
 
 
 /**
