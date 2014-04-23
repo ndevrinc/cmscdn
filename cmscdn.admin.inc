@@ -11,7 +11,7 @@
 function cmscdn_settings() {
   // Clear the javascript cache when the setting is updated and check version of jquery file.
   $form['#submit'][] = 'drupal_clear_js_cache';
-  $form['#submit'][] = 'jquery_update_flush_caches';
+  // $form['#submit'][] = 'jquery_update_flush_caches';
 
   $form['cmscdn_server_status'] = array(
     '#type'  => 'fieldset',
