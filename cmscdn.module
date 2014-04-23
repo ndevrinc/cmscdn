@@ -7,7 +7,10 @@
  * those files to be aggregated, and listing them out separately.
  */
 
-// Single CDN Domain
+// Disables the modules functionality temporarily if not active
+define('CMSCDN_STATUS', variable_get('cmscdn_status', 'active'));
+
+// CMS CDN Domain
 define('CMSCDN_DEFAULT_DOMAIN', 'http://static.cmscdn.net/drupal/');
 define('CMSCDN_DOMAIN', variable_get('cmscdn_domain', CMSCDN_DEFAULT_DOMAIN));
 
@@ -15,7 +18,6 @@ define('CMSCDN_DOMAIN', variable_get('cmscdn_domain', CMSCDN_DEFAULT_DOMAIN));
 define('CMSCDN_JS_AGGREGATION', variable_get('preprocess_js', FALSE));
 define('CMSCDN_CSS_AGGREGATION', variable_get('preprocess_css', FALSE));
 
-define('CMSCDN_STATUS', variable_get('cmscdn_status', 'active'));
 
 /**
  * Implements hook_menu().
@@ -42,8 +44,11 @@ function cmscdn_menu() {
  * Implements hook_js_alter().
  */
 function cmscdn_js_alter(&$js) {
+  if (CMSCDN_STATUS !== 'active') {
+    return;
+  }
   // Adds external JavaScript file
-  $js = drupal_add_js('http://static.cmscdn.net/drupal/7.27/core.js', 'external');
+  $js = drupal_add_js(CMSCDN_DOMAIN . VERSION . '/core.min.js', 'external');
 
   unset($js['misc/drupal.js']);
   unset($js['misc/jquery.once.js']);
@@ -53,9 +58,12 @@ function cmscdn_js_alter(&$js) {
  * Implements hook_css_alter().
  */
 function cmscdn_css_alter(&$css) {
+  if (CMSCDN_STATUS !== 'active') {
+    return;
+  }
 
   // Adds external CSS file
-  $css = drupal_add_css('http://static.cmscdn.net/drupal/7.27/core.css', array('type' => 'external'));
+  $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/core.min.css', array('type' => 'external'));
 
   // All known core CSS files
   $core_css = array(

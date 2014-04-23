@@ -25,7 +25,20 @@ function cmscdn_settings() {
       'down' => t('Down'),
     ),
     '#default_value' => variable_get('cmscdn_status', 'active'),
-    '#description' => t('If there are ever any problems with the system you can change this value to point to your own CDN. Check here for server status: %domaintest.txt.', array('%domain' => CMSCDN_DOMAIN_JS)),
+    '#description' => t('If there are ever any problems with the system you can change this value to point to your own CDN. Check here for server status: %domain%version/CHANGELOG.txt.', array('%domain' => CMSCDN_DOMAIN, '%version' => VERSION)),
+  );
+
+  $form['cmscdn_domain_override'] = array(
+    '#type'  => 'fieldset',
+    '#title' => t('Domain Override'),
+    '#collapsible'  => TRUE,
+    '#collapsed'    => TRUE,
+  );
+  $form['cmscdn_domain_override']['cmscdn_domain'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CMS CDN Domain'),
+    '#default_value' => variable_get('cmscdn_domain_js', CMSCDN_DEFAULT_DOMAIN),
+    '#description' => t('If there is ever a problem with %domain you can point this to wherever you want, simply \'/\' would be for local.', array('%domain' => CMSCDN_DOMAIN)),
   );
 
   $form['cmscdn_aggregation'] = array(
@@ -45,25 +58,6 @@ function cmscdn_settings() {
     '#options' => array(t('Disabled'), t('Enabled')),
     '#default_value' => intval(variable_get('cmscdn_aggregate_js', TRUE)),
     '#description' => t('Core aggregation is often not enabled due to caching issues. It is recommended to leave CMS CDN aggregation enabled.'),
-  );
-
-  $form['cmscdn_domain_override'] = array(
-    '#type'  => 'fieldset',
-    '#title' => t('Domain Override'),
-    '#collapsible'  => TRUE,
-    '#collapsed'    => TRUE,
-  );
-  $form['cmscdn_domain_override']['cmscdn_domain_js'] = array(
-    '#type' => 'textfield',
-    '#title' => t('JavaScript CDN Domain'),
-    '#default_value' => variable_get('cmscdn_domain_js', CMSCDN_DEFAULT_DOMAIN_JS),
-    '#description' => t('If there is ever a problem with %domain you can point this to wherever you want, simply \'/\' would be for local.', array('%domain' => CMSCDN_DOMAIN_JS)),
-  );
-  $form['cmscdn_domain_override']['cmscdn_domain_css'] = array(
-    '#type' => 'textfield',
-    '#title' => t('CSS CDN Domain'),
-    '#default_value' => variable_get('cmscdn_domain_css', CMSCDN_DEFAULT_DOMAIN_CSS),
-    '#description' => t('If there is ever a problem with %domain you can point this to wherever you want, simply \'/\' would be for local.', array('%domain' => CMSCDN_DOMAIN_CSS)),
   );
 
   return system_settings_form($form);
