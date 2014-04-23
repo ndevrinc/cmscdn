@@ -47,8 +47,16 @@ function cmscdn_js_alter(&$js) {
   if (CMSCDN_STATUS !== 'active') {
     return;
   }
-  // Adds external JavaScript file
-  $js = drupal_add_js(CMSCDN_DOMAIN . VERSION . '/core.min.js', 'external');
+
+  if (CMSCDN_JS_AGGREGATION) {
+    // Adds external aggregated JavaScript file
+    $js = drupal_add_js(CMSCDN_DOMAIN . VERSION . '/core.min.js', 'external');
+  }
+  else {
+    // Adds external JavaScript files
+    $js = drupal_add_js(CMSCDN_DOMAIN . VERSION . '/misc/drupal.js', 'external');
+    $js = drupal_add_js(CMSCDN_DOMAIN . VERSION . '/misc/jquery.once.js', 'external');
+  }
 
   unset($js['misc/drupal.js']);
   unset($js['misc/jquery.once.js']);
