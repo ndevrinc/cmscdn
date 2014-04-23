@@ -70,42 +70,56 @@ function cmscdn_css_alter(&$css) {
     return;
   }
 
-  // Adds external CSS file
-  $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/core.min.css', array('type' => 'external'));
+  global $language;
+  $core_css = array();
 
-  // All known core CSS files
-  $core_css = array(
-    'modules/system/system.base.css',
-    'modules/system/system.menus.css',
-    'modules/system/system.admin.css',
-    'modules/system/system.messages.css',
-    'modules/system/system.theme.css',
-    'modules/field/theme/field.css',
-    'modules/node/node.css',
-    'modules/user/user.css',
-  );
+  if ($language->dir == 'rtl') {
+    // All known Right to Left core CSS files
+    $core_css = array(
+      'modules/system/system.base-rtl.css',
+      'modules/system/system.menus-rtl.css',
+      'modules/system/system.admin-rtl.css',
+      'modules/system/system.messages-rtl.css',
+      'modules/system/system.theme-rtl.css',
+      'modules/field/theme/field-rtl.css',
+      'modules/node/node.css',
+      'modules/user/user-rtl.css',
+    );
+  }
+  else {
+    // All known core CSS files
+    $core_css = array(
+      'modules/system/system.base.css',
+      'modules/system/system.menus.css',
+      'modules/system/system.admin.css',
+      'modules/system/system.messages.css',
+      'modules/system/system.theme.css',
+      'modules/field/theme/field.css',
+      'modules/node/node.css',
+      'modules/user/user.css',
+    );
+  }
+
+  if (CMSCDN_CSS_AGGREGATION) {
+    // Adds external aggregated CSS file
+    // Use rtl files for any right to left language sites
+    if ($language->dir == 'rtl') {
+      $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/core-rtl.min.css', array('type' => 'external'));
+    }
+    else {
+      $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/core.min.css', array('type' => 'external'));
+    }
+  }
+  else {
+    // Adds external CSS files
+    foreach ($core_css as $file) {
+      $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/' . $file, array('type' => 'external'));
+    }
+  }
+
   // Removes all known core CSS files
   foreach ($core_css as $key) {
     unset($css[$key]);
   }
-
-  // unset($css['modules/system/system.base.css']);
-  // unset($css['modules/system/system.menus.css']);
-  // unset($css['modules/system/system.admin.css']);
-  // unset($css['modules/system/system.messages.css']);
-  // unset($css['modules/system/system.theme.css']);
-  // unset($css['modules/field/theme/field.css']);
-  // unset($css['modules/node/node.css']);
-  // unset($css['modules/user/user.css']);
-
-  // TODO: When right to left site we need to exclude these
-  // unset($css['modules/system/system.base-rtl.css']);
-  // unset($css['modules/system/system.menus-rtl.css']);
-  // unset($css['modules/system/system.admin-rtl.css']);
-  // unset($css['modules/system/system.messages-rtl.css']);
-  // unset($css['modules/system/system.theme-rtl.css']);
-  // unset($css['modules/field/theme/field-rtl.css']);
-  // unset($css['modules/node/node.css']);
-  // unset($css['modules/user/user-rtl.css']);
 
 }
