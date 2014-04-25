@@ -18,7 +18,6 @@ define('CMSCDN_DOMAIN', variable_get('cmscdn_domain', CMSCDN_DEFAULT_DOMAIN));
 define('CMSCDN_JS_AGGREGATION', variable_get('cmscdn_aggregate_js', FALSE));
 define('CMSCDN_CSS_AGGREGATION', variable_get('cmscdn_aggregate_css', FALSE));
 
-
 /**
  * Implements hook_menu().
  */
@@ -54,8 +53,8 @@ function cmscdn_js_alter(&$js) {
   }
   else {
     // Adds external JavaScript files
-    $js = drupal_add_js(CMSCDN_DOMAIN . VERSION . '/misc/drupal.js', 'external');
-    $js = drupal_add_js(CMSCDN_DOMAIN . VERSION . '/misc/jquery.once.js', 'external');
+    $js = drupal_add_js(CMSCDN_DOMAIN . VERSION . '/misc/drupal.js', array('type' => 'external', 'weight' => -19));
+    $js = drupal_add_js(CMSCDN_DOMAIN . VERSION . '/misc/jquery.once.js', array('type' => 'external', 'weight' => -20));
   }
 
   unset($js['misc/drupal.js']);
@@ -104,16 +103,16 @@ function cmscdn_css_alter(&$css) {
     // Adds external aggregated CSS file
     // Use rtl files for any right to left language sites
     if ($language->dir == 'rtl') {
-      $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/core-rtl.min.css', array('type' => 'external'));
+      $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/core-rtl.min.css', array('type' => 'external', 'weight' => -1));
     }
     else {
-      $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/core.min.css', array('type' => 'external'));
+      $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/core.min.css', array('type' => 'external', 'weight' => -1));
     }
   }
   else {
     // Adds external CSS files
     foreach ($core_css as $file) {
-      $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/' . $file, array('type' => 'external'));
+      $css = drupal_add_css(CMSCDN_DOMAIN . VERSION . '/' . $file, array('type' => 'external', 'weight' => 0));
     }
   }
 
